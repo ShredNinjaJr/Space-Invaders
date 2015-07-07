@@ -1,14 +1,58 @@
 #ifndef EMULATOR_H
 #define EMULATOR_H
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* type definitions */
 typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
 
+/* Structures for emulators */
+
+/* Structure for the cc flags */
+typedef struct ConditionCodes
+{
+	uint8_t z:1;
+	uint8_t s:1;
+	uint8_t p:1;
+	uint8_t cy:1;
+	uint8_t ac:1;
+	uint8_t pad:3;
+} ConditionCodes;
+
+
+/* Current state of the program */
+typedef struct State8080
+{
+	/* the 7 registers */
+	uint8_t a;
+	uint8_t b;
+	uint8_t c;
+	uint8_t d;
+	uint8_t e;
+	uint8_t h;
+	uint8_t l;
+	/* Stack pointer */
+	uint16_t sp;
+	/* Program Counter */
+	uint16_t pc;
+
+	uint8_t * memory;
+	struct ConditionCodes cc;
+	uint8_t int_enable;
+} State8080;
+
 /* function declarations */
-int disassemble8080(unsigned char * code_buffer, int pc);
+void emulate8080(State8080* state, int num_cycles);
 uint8_t parity(uint16_t number);
+void generate_interrupt(State8080* state, int interrupt_num);
+
+/* Function pointers for port OUT and IN */
+void (*port8080_out)(uint8_t port, State8080* state);
+uint8_t (*port8080_in)(uint8_t port, State8080* state);
+
 /* Macros */
 #define MVI(x) x = opcode[1]; state->pc++; break;	
 
@@ -71,5 +115,18 @@ do{ 			\
 	state->cc.p = parity(x);	\
 	state->cc.cy = 0;	\
 }while(0)
+
+#define ANA(x)		\
+do{ 			\
+	state->a &= x;	\
+	state->cc.z = ((x & 0xFF) == 0);	\
+	state->cc.s = (x & 0x80) != 0;\
+	state->cc.p = parity(x);	\
+	state->cc.cy = 0;	\
+}while(0)
+
+
+
+
 
 #endif

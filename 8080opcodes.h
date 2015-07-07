@@ -26,5 +26,6 @@ uint8_t cycles_count[0x100] = { 4, 10,  7, 5,  5,  5,  7, 4, 4, 10,  7, 5, 5, 5,
 
 
 
+int disassemble8080(unsigned char * code_buffer, int pc);
 
 #endif

@@ -3,7 +3,9 @@
 #include <time.h>
 #include <stdlib.h>
 
-#define NUM_DOTS 1024
+#define NUM_DOTS 1024* 8
+#define WINDOW_HEIGHT 1024
+#define WINDOW_WIDTH 1280
 
 typedef struct
 {
@@ -37,8 +39,8 @@ void demo_init()
 		demo_dots[i].green = rand()%255;
       		demo_dots[i].vx = demo_roll()*16.0f-8.0f;
 		demo_dots[i].vy = demo_roll()*16.0f-8.0f;
-		demo_dots[i].x = demo_roll()*320.0f;
-		demo_dots[i].y = demo_roll()*240.0f;
+		demo_dots[i].x = demo_roll()*WINDOW_WIDTH;
+		demo_dots[i].y = demo_roll()* WINDOW_HEIGHT;
 	}
 }
 
@@ -52,14 +54,14 @@ void demo_handle()
 		demo_dots[i].x += demo_dots[i].vx * demo_time_step;
 		demo_dots[i].y += demo_dots[i].vy * demo_time_step;
 		/* Hit walls? */
-		if(demo_dots[i].x < 0.0f || demo_dots[i].x >= 320.0f)
+		if(demo_dots[i].x < 0.0f || demo_dots[i].x >= WINDOW_WIDTH)
 		{
 			/* Undo move (demo_time_step is still the same value it was before and is valid for the current frame) */
 			demo_dots[i].x -= demo_dots[i].vx*demo_time_step;
 			/* Reverse */
 			demo_dots[i].vx = -demo_dots[i].vx;
 		}
-		if(demo_dots[i].y < 0.0f || demo_dots[i].y >= 240.0f)
+		if(demo_dots[i].y < 0.0f || demo_dots[i].y >= WINDOW_HEIGHT)
 		{
 			/* Undo move (demo_time_step is still the same value it was before and is valid for the current frame) */
 			demo_dots[i].y -= demo_dots[i].vy*demo_time_step;
@@ -133,7 +135,7 @@ int main(int argc,char **argv)
     if(SDL_Init(SDL_INIT_VIDEO) != 0)
         fprintf(stderr,"Could not initialize SDL: %s\n",SDL_GetError());
     /* Open main window */
-    demo_screen = SDL_SetVideoMode(320,240,0,SDL_HWSURFACE|SDL_DOUBLEBUF);
+    demo_screen = SDL_SetVideoMode(WINDOW_WIDTH,WINDOW_HEIGHT,0,SDL_HWSURFACE|SDL_DOUBLEBUF);
     if(!demo_screen)
         fprintf(stderr,"Could not set video mode: %s\n",SDL_GetError());
 
