@@ -21,6 +21,7 @@ void generate_interrupt(State8080* state, int interrupt_num)
 		state->memory[state->sp-2] = (state->pc &  0xFF);
 		state->sp -= 2;
 	
+		state->int_enable = 0;
 		/* Jump to vector location */
 		state->pc =  8 * interrupt_num;
 	}
@@ -744,6 +745,16 @@ void emulate8080(State8080 * state, int num_cycles)
 				state->sp += 2;
 				break;
 
+			/* JPO adr */
+			case 0xe2:
+				if(!state->cc.p)
+				{
+					JMP();
+				}
+				else
+					state->pc+=2;
+				break;
+
 			/* PUSH H*/
 			case 0xe5:
 				state->memory[state->sp-2] = state->l;
@@ -761,6 +772,18 @@ void emulate8080(State8080 * state, int num_cycles)
 				state->cc.cy = 0;
 				state->pc++;
 				break;
+
+			/* JPE adr */
+			case 0xea:
+				if(state->cc.p)
+				{
+					JMP();
+				}
+				else
+					state->pc += 2;
+
+				break;
+
 
 			/* XCHG */
 			case 0xeb:
@@ -786,6 +809,16 @@ void emulate8080(State8080 * state, int num_cycles)
 				state->sp += 2;
 				break;
 
+			/* JP adr */
+			case 0xf2:
+				if(!state->cc.s)
+				{
+					JMP();
+				}
+				else
+					state->pc += 2;
+				break;
+
 			/* DI */
 			case 0xf3:
 				state->int_enable = 0;
@@ -799,6 +832,16 @@ void emulate8080(State8080 * state, int num_cycles)
 				state->memory[state->sp-2] = flags;
 				state->memory[state->sp-1] = state->a;
 				state->sp -= 2;
+				break;
+
+			/* JM adr */
+			case 0xfa:
+				if(state->cc.s)
+				{
+					JMP();
+				}
+				else
+					state->pc += 2;
 				break;
 			
 			/* EI */

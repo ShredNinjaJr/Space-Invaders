@@ -18,12 +18,13 @@ union
 	struct
 	{
 		uint8_t coin:1;
-		uint8_t p2_start:1;
-		uint8_t p1_start:1;
+		uint8_t p2_start_button:1;
+		uint8_t p1_start_button:1;
 		uint8_t unused:1;
 		uint8_t p1_shoot:1;
 		uint8_t p1_joystick_left:1;
 		uint8_t p1_joystick_right:1;
+		uint8_t pad:1;
 	};
 }port1;
 
@@ -100,6 +101,26 @@ void handle_input()
 				switch(ev.key.keysym.sym)
 				{
 					case SDLK_LEFT:
+						port1.p1_joystick_left = 1;
+						break;
+
+					case SDLK_RIGHT:
+						port1.p1_joystick_right = 1;
+						break;
+
+					case SDLK_RETURN:
+						port1.p1_start_button = 1;
+						break;
+
+					case SDLK_SPACE:
+						port1.p1_shoot = 1;
+						break;
+
+					case SDLK_c:
+						port1.coin = 1;
+						break;
+
+					case SDLK_ESCAPE:
 						exit(0);
 						break;
 
@@ -108,6 +129,33 @@ void handle_input()
 				}	
 				break;
 
+			case SDL_KEYUP:
+				switch(ev.key.keysym.sym)
+				{
+					case SDLK_LEFT:
+						port1.p1_joystick_left = 0;
+						break;
+
+					case SDLK_RIGHT:
+						port1.p1_joystick_right = 0;
+						break;
+
+					case SDLK_RETURN:
+						port1.p1_start_button = 0;
+						break;
+
+					case SDLK_SPACE:
+						port1.p1_shoot = 0;
+						break;
+
+					case SDLK_c:
+						port1.coin= 0;
+						break;
+
+					default:
+						break;
+				}	
+				break;
 			case SDL_QUIT:
 				exit(0);
 				break;
