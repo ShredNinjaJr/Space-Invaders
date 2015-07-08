@@ -566,6 +566,24 @@ void emulate8080(State8080 * state, int num_cycles)
 				XRA(state->a);
 				break;
 
+			/* ORA B */
+			case 0xb0:
+				XRA(state->b);
+				break;
+
+			/* ORA M */
+			case 0xb6:
+				ORA(state->memory[(state->h << 8) |state->l]);
+				break;
+
+			/* RNZ*/
+			case 0xc0:
+				if(!state->cc.z)
+				{
+					RET();
+				}
+				break;
+
 			/* POP B */
 			case 0xc1:
 				state->c = state->memory[state->sp];
@@ -636,6 +654,14 @@ void emulate8080(State8080 * state, int num_cycles)
 				CALL();
 				break;
 
+			/* RNC */
+			case 0xd0:
+				if(!state->cc.cy)
+				{
+					RET();
+				}
+				break;
+
 			/* POP D */
 			case 0xd1:
 				state->e = state->memory[state->sp];
@@ -651,6 +677,7 @@ void emulate8080(State8080 * state, int num_cycles)
 				}
 				else
 					state->pc+=2;
+				break;
 
 			/* OUT byte*/
 			case 0xd3:
@@ -668,6 +695,17 @@ void emulate8080(State8080 * state, int num_cycles)
 				state->memory[state->sp-2] = state->e;
 				state->memory[state->sp-1] = state->d;
 				state->sp -= 2;
+				break;
+
+			/* SUI byte */
+			case 0xd6:
+				answer = (uint16_t)state->a - (uint16_t) opcode[1];
+				state->a -= opcode[1];
+				/* Set flags */
+				state->cc.z = ((state->a & 0xFF) == 0);	
+				state->cc.s = (state->a & 0x80) != 0;
+				state->cc.p = parity(state->a);		
+				state->cc.cy = (answer & 0xff) != 0;
 				break;
 
 			/* RC */

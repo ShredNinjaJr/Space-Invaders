@@ -566,6 +566,24 @@ void emulate8080(State8080 * state, int num_cycles)
 				XRA(state->a);
 				break;
 
+			/* ORA B */
+			case 0xb0:
+				XRA(state->b);
+				break;
+
+			/* ORA M */
+			case 0xb6:
+				ORA(state->memory[(state->h << 8) |state->l]);
+				break;
+
+			/* RNZ*/
+			case 0xc0:
+				if(!state->cc.z)
+				{
+					RET();
+				}
+				break;
+
 			/* POP B */
 			case 0xc1:
 				state->c = state->memory[state->sp];
@@ -636,11 +654,29 @@ void emulate8080(State8080 * state, int num_cycles)
 				CALL();
 				break;
 
+			/* RNC */
+			case 0xd0:
+				if(!state->cc.cy)
+				{
+					RET();
+				}
+				break;
+
 			/* POP D */
 			case 0xd1:
 				state->e = state->memory[state->sp];
 				state->d = state->memory[state->sp + 1];
 				state->sp += 2;
+				break;
+
+			/*JNC adr */
+			case 0xd2:
+				if(!state->cc.cy)
+				{
+					JMP();
+				}
+				else
+					state->pc+=2;
 				break;
 
 			/* OUT byte*/

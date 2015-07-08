@@ -133,7 +133,7 @@ void draw_screen(State8080 * state)
 	{
 		for( i = 0; i < 8; i++)
 		{
-			*screen_ptr = (state->memory[vmem_ptr] >> i) & 1;
+			*screen_ptr = ((state->memory[vmem_ptr] >> i) & 1) ? 0xFF: 0;
 			screen_ptr++;
 		}
 	}

@@ -110,22 +110,30 @@ do {				\
 #define XRA(x)		\
 do{ 			\
 	state->a ^= x;	\
-	state->cc.z = ((x & 0xFF) == 0);	\
-	state->cc.s = (x & 0x80) != 0;\
-	state->cc.p = parity(x);	\
+	state->cc.z = ((state->a & 0xFF) == 0);	\
+	state->cc.s = (state->a & 0x80) != 0;\
+	state->cc.p = parity(state->a);	\
 	state->cc.cy = 0;	\
 }while(0)
 
 #define ANA(x)		\
 do{ 			\
 	state->a &= x;	\
-	state->cc.z = ((x & 0xFF) == 0);	\
-	state->cc.s = (x & 0x80) != 0;\
-	state->cc.p = parity(x);	\
+	state->cc.z = ((state->a & 0xFF) == 0);	\
+	state->cc.s = (state->a & 0x80) != 0;\
+	state->cc.p = parity(state->a);	\
 	state->cc.cy = 0;	\
 }while(0)
 
 
+#define ORA(x)	\
+do{		\
+	state->a |= x;\
+	state->cc.z = ((state->a & 0xFF) == 0);	\
+	state->cc.s = (state->a & 0x80) != 0;\
+	state->cc.p = parity(state->a);	\
+	state->cc.cy = 0;	\
+}while(0)
 
 
 
