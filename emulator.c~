@@ -607,6 +607,16 @@ void emulate8080(State8080 * state, int num_cycles)
 				JMP();
 				break; 
 
+			/* CNZ adr */
+			case 0xc4:
+				if(!state->cc.z)
+				{
+					CALL();
+				}
+				else
+					state->pc+= 2;
+				break;
+
 			/* PUSH B*/
 			case 0xc5:
 				state->memory[state->sp-2] = state->c;
@@ -617,9 +627,7 @@ void emulate8080(State8080 * state, int num_cycles)
 			/* ADI byte*/
 			case 0xc6:
 				answer = (uint16_t)state->a + (uint16_t)opcode[1];
-				state->cc.z = (answer == 0);
-				state->cc.s = (answer & 0x80) != 0;
-				state->cc.p = parity(answer);
+				set_zsp(answer);
 				state->cc.cy = (answer > 0xFF);
 				state->a = answer & 0xFF;
 				state->pc++;
@@ -649,11 +657,29 @@ void emulate8080(State8080 * state, int num_cycles)
 					state->pc += 2;
 				break;
 				
+			/* CZ adr */
+			case 0xcc:
+				if(state->cc.z)
+				{
+					CALL();
+				}
+				else state->pc += 2;
+				break;
 				
 			/* Call adr */
 			case 0xcd:
 				CALL();
 				break;
+
+			/* ACI byte */
+			case 0xce:
+				answer = state->a + opcode[1] + state->cc.cy;
+				set_zsp(answer);
+				state->a = answer;
+				state->cc.cy = ( answer > 0xFF);
+				state->pc++;
+				break;
+				
 
 			/* RNC */
 			case 0xd0:
@@ -691,6 +717,17 @@ void emulate8080(State8080 * state, int num_cycles)
 				}
 				break;
 
+			/* CNC adr */
+			case 0xd4:
+				if(!state->cc.cy)
+				{
+					CALL();
+				}
+				else
+					state->pc += 2;
+				break;
+				
+
 			/* PUSH D*/
 			case 0xd5:
 				state->memory[state->sp-2] = state->e;
@@ -701,12 +738,11 @@ void emulate8080(State8080 * state, int num_cycles)
 			/* SUI byte */
 			case 0xd6:
 				answer = (uint16_t)state->a - (uint16_t) opcode[1];
-				state->a -= opcode[1];
 				/* Set flags */
-				state->cc.z = ((state->a & 0xFF) == 0);	
-				state->cc.s = (state->a & 0x80) != 0;
-				state->cc.p = parity(state->a);		
-				state->cc.cy = (answer & 0xff) != 0;
+				set_zsp(answer);
+				state->cc.cy = (state->a < opcode[1]) ;
+				state->a = (answer & 0xFF);
+				state->pc++;
 				break;
 
 			/* RC */
@@ -738,6 +774,32 @@ void emulate8080(State8080 * state, int num_cycles)
 				}
 				break;
 
+			/* CC adr */
+			case 0xdc:
+				if( state->cc.cy)
+				{
+					CALL();
+				}
+				else
+					state->pc+= 2; 
+				break;
+
+			/* SBI byte */
+			case 0xde:
+				answer = state->a - opcode[1] - state->cc.cy;
+				set_zsp(answer);
+				state->cc.cy = !(answer > 0xFF);
+				state->pc++;
+				break;
+
+			/* RPO */
+			case 0xe0:
+				if(!state->cc.p)
+				{
+					RET();
+				}
+				break;
+
 			/* POP H */
 			case 0xe1:
 				state->l = state->memory[state->sp];
@@ -755,6 +817,27 @@ void emulate8080(State8080 * state, int num_cycles)
 					state->pc+=2;
 				break;
 
+			/* XTHL */
+			case 0xe3:
+				temp = state->l;
+				state->l = state->memory[state->sp];
+				state->memory[state->sp] = temp;
+
+				temp = state->h;
+				state->h = state->memory[state->sp + 1];
+				state->memory[state->sp+1] = temp;
+				break;
+
+			/* CPO adr */
+			case 0xe4:
+				if(!state->cc.p)
+				{
+					CALL();
+				}
+				else
+					state->pc+=2 ;
+				break;
+
 			/* PUSH H*/
 			case 0xe5:
 				state->memory[state->sp-2] = state->l;
@@ -766,11 +849,17 @@ void emulate8080(State8080 * state, int num_cycles)
 			case 0xe6:
 				state->a &= opcode[1];
 				/* Flags */
-				state->cc.z = (state->a == 0);
-				state->cc.s = ((state->a & 0x80) != 0);
-				state->cc.p = parity(state->a);
+				set_zsp(state->a);
 				state->cc.cy = 0;
 				state->pc++;
+				break;
+
+			/* RPE */
+			case 0xe8:
+				if(state->cc.p)
+				{
+					RET();
+				}
 				break;
 
 			/* JPE adr */
@@ -797,6 +886,21 @@ void emulate8080(State8080 * state, int num_cycles)
 				state->e = answer;
 				break;
 
+			/* CPE adr */
+			case 0xec:
+				if(state->cc.p)
+				{
+					CALL();
+				}
+				else state->pc += 2;
+				break;
+
+			/* XRI byte */
+			case 0xee:
+				XRA(opcode[1]);
+				state->pc++;
+				break;
+
 			/* POP PSW */
 			case 0xf1:
 				flags = state->memory[state->sp];
@@ -811,7 +915,7 @@ void emulate8080(State8080 * state, int num_cycles)
 
 			/* JP adr */
 			case 0xf2:
-				if(state->cc.s)
+				if(!state->cc.s)
 				{
 					JMP();
 				}
@@ -824,6 +928,15 @@ void emulate8080(State8080 * state, int num_cycles)
 				state->int_enable = 0;
 				break;
 
+			/* CP adr */
+			case 0xf4:
+				if(!state->cc.s)
+				{
+					CALL();
+				}
+				else state->pc += 2;
+				break;
+
 			/* PUSH PSW*/
 			case 0xf5:
 				flags = 2;
@@ -834,9 +947,22 @@ void emulate8080(State8080 * state, int num_cycles)
 				state->sp -= 2;
 				break;
 
+			/* ORI byte */
+			case 0xf6:
+				ORA(opcode[1]);
+				state->pc++;
+				break;
+
+			/* RM */
+			case 0xf8:
+				if(state->cc.s)
+				{
+					RET();
+				}
+
 			/* JM adr */
 			case 0xfa:
-				if(!state->cc.s)
+				if(state->cc.s)
 				{
 					JMP();
 				}
@@ -849,13 +975,21 @@ void emulate8080(State8080 * state, int num_cycles)
 				state->int_enable = 1;
 				break;
 
+			/* CM adr */
+			case 0xfc:
+				if(state->cc.s)
+				{
+					CALL();
+				}
+				else
+					state->pc += 2;
+				break;
+
 			/* CPI byte*/
 			case 0xfe:
 				answer = (uint16_t)state->a - (uint16_t)opcode[1];
 				/* Set flags */
-				state->cc.z = ((answer & 0xFF) == 0);
-				state->cc.s = ((answer & 0x80) != 0);
-				state->cc.p = parity(answer);
+				set_zsp(answer);
 				state->cc.cy = (state->a < opcode[1]);
 				state->pc++;
 				break;
@@ -875,6 +1009,7 @@ void emulate8080(State8080 * state, int num_cycles)
 /* Returns 1 for even number of 1s and 0 for odd */
 uint8_t parity(uint16_t number)
 {
+	number &= 0xFF;
 	uint8_t ret = 1;
 	while(number > 0)
 	{

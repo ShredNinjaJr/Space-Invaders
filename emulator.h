@@ -91,9 +91,7 @@ do{		\
 do{ 					\
 	x--;				\
 	/* set flags */			\
-	state->cc.z = (( x & 0xFF) == 0); \
-	state->cc.s = ((x & 0x80) != 0);	\
-	state->cc.p = parity(x);	\
+	set_zsp(x);\
 }while(0)
 
 
@@ -101,27 +99,21 @@ do{ 					\
 do {				\
 	x++;			\
 	/* set flags */		\
-	state->cc.z = (( x & 0xFF) == 0); \
-	state->cc.s = ((x & 0x80) != 0);	\
-	state->cc.p = parity(x);	\
+	set_zsp(x);\
 } while(0)
 
 
 #define XRA(x)		\
 do{ 			\
 	state->a ^= x;	\
-	state->cc.z = ((state->a & 0xFF) == 0);	\
-	state->cc.s = (state->a & 0x80) != 0;\
-	state->cc.p = parity(state->a);	\
+	set_zsp(state->a);\
 	state->cc.cy = 0;	\
 }while(0)
 
 #define ANA(x)		\
 do{ 			\
 	state->a &= x;	\
-	state->cc.z = ((state->a & 0xFF) == 0);	\
-	state->cc.s = (state->a & 0x80) != 0;\
-	state->cc.p = parity(state->a);	\
+	set_zsp(state->a);\
 	state->cc.cy = 0;	\
 }while(0)
 
@@ -129,12 +121,16 @@ do{ 			\
 #define ORA(x)	\
 do{		\
 	state->a |= x;\
-	state->cc.z = ((state->a & 0xFF) == 0);	\
-	state->cc.s = (state->a & 0x80) != 0;\
-	state->cc.p = parity(state->a);	\
+	set_zsp(state->a);\
 	state->cc.cy = 0;	\
 }while(0)
 
 
+#define set_zsp(x)	\
+do{			\
+	state->cc.z = ((x & 0xFF) == 0);	\
+	state->cc.s = ((x & 0x80) != 0);	\
+	state->cc.p = parity(x);		\
+}while(0)
 
 #endif
