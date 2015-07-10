@@ -27,6 +27,9 @@ int main(int argc, char ** argv)
 
 	p_state->pc = 0x100;
 			
+	p_state->memory[0x59c] = 0xc3;
+	p_state->memory[0x59d] = 0xc2;
+	p_state->memory[0x59e] = 0x05;
 	while(1)
 	{
 		emulate8080(p_state, 1);

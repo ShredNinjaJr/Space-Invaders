@@ -49,12 +49,20 @@ void emulate8080(State8080 * state, int num_cycles)
 		{
 			/* NOP */
 			case 0x00: break;
+
 			/* LXI B, word */
 			case 0x01:
 				   /* Load immediate B <- byte 3, C <- byte 2*/
 				   state->c = opcode[1];
 				   state->b = opcode[2];
 				   state->pc += 2;	/* 3 byte instruction */
+				   break;
+
+			/*STAX B*/
+			case 0x02:
+				   /* (bc) = a */
+				   adr = (state->b << 8) | state->c;
+				   state->memory[adr] = state->a;
 				   break;
 
 			/* INX B*/
@@ -77,6 +85,14 @@ void emulate8080(State8080 * state, int num_cycles)
 			case 0x06:
 				   MVI(state->b);
 
+			/* RLC */
+			case 0x07:
+				   temp = state->a;
+				   state->a = ((temp & 0x80) >> 7 | (temp << 1));
+				   state->cc.cy = ((temp & 0x80) != 0);
+				   break;
+
+
 			/* DAD B */
 			case 0x09:
 				   /* HL = HL + BC */
@@ -95,6 +111,14 @@ void emulate8080(State8080 * state, int num_cycles)
 				   state->a = state->memory[adr];
 				   break;
 
+			/* DCX B */
+			case 0x0b:
+			          if(state->c-- == 0)
+				  {
+					  state->b --;
+				  }
+				  break;
+
 			/* INR C*/
 			case 0x0c:
 				   INR(state->c);
@@ -111,8 +135,9 @@ void emulate8080(State8080 * state, int num_cycles)
 			
 			/* RRC */
 			case 0x0f:
-				   state->cc.cy = ((state->a & 0x80) != 0);
+				   state->cc.cy = ((state->a & 1) );
 				   state->a >>= 1;
+				   state->a &= 0x7F;
 				   state->a |= (state->cc.cy << 7);
 				   break;
 
@@ -121,6 +146,13 @@ void emulate8080(State8080 * state, int num_cycles)
 				   state->d = opcode[2];
 				   state->e = opcode[1];
 				   state->pc += 2;
+				   break;
+
+			/*STAX D*/
+			case 0x12:
+				   /* (de) = a */
+				   adr = (state->d << 8) | state->e;
+				   state->memory[adr] = state->a;
 				   break;
 
 			/* INX D*/
@@ -143,6 +175,13 @@ void emulate8080(State8080 * state, int num_cycles)
 			case 0x16:
 				   MVI(state->d);
 
+			/* RAL */
+			case 0x17:
+				   temp = state->a;
+				   state->a = (temp << 1) | (state->cc.cy);
+				   state->cc.cy = (temp & 0x80) != 0;
+				   break;
+
 			/* DAD D */
 			case 0x19:
 				   /* HL = HL + DE */
@@ -160,6 +199,14 @@ void emulate8080(State8080 * state, int num_cycles)
 				   state->a = state->memory[adr];
 				   break;
 
+			/* DCX D*/
+			case 0x1b:
+			          if(state->e-- == 0)
+				  {
+					  state->d --;
+				  }
+				  break;
+
 			/* INR E*/
 			case 0x1c:
 				   INR(state->e);
@@ -174,12 +221,27 @@ void emulate8080(State8080 * state, int num_cycles)
 			case 0x1e:
 				  MVI(state->e);
 			
+			/* RAR */
+			case 0x1f:
+				  temp = ((state->a >> 1) & 0x7F) | (state->cc.cy << 7);
+				  state->cc.cy = state->a & 1;
+				  state->a = temp;
+				  break;
+
 			/* LXI H, word */
 			case 0x21:
 				  state->h = opcode[2];
 				  state->l = opcode[1];
 				  state->pc+= 2;
 				  break;
+
+			/* SHLD adr */
+			case 0x22:
+				   adr = (opcode[2] << 8) | opcode[1];
+                    		   state->memory[adr] = state->l;
+				   state->memory[adr+1] = state->h;
+				   state->pc += 2;
+				   break;
 
 			/* INX H*/
 			case 0x23:
@@ -201,6 +263,7 @@ void emulate8080(State8080 * state, int num_cycles)
 			case 0x26:
 				   MVI(state->h);
 
+
 			/* DAD H */
 			case 0x29:
 				   /* HL = HL + HL */
@@ -211,6 +274,22 @@ void emulate8080(State8080 * state, int num_cycles)
 				   state->h = (temp >> 8) & 0xFF;
 				   state->l = temp & 0xFF;
 				   break;
+
+			/* LHLD adr */
+			case 0x2a:
+				   adr = (opcode[2] << 8) | opcode[1];
+				   state->l = state->memory[adr];
+				   state->h = state->memory[adr+1];
+				   state->pc += 2;
+				   break;
+
+			/* DCX H */
+			case 0x2b:
+			         if(state->l-- == 0)
+				{
+					state->h--;
+				}
+				break;
 
 			/* INR L*/
 			case 0x2c:
@@ -225,6 +304,11 @@ void emulate8080(State8080 * state, int num_cycles)
 			/* MVI L, byte */
 			case 0x2e:
 				MVI(state->l);		
+
+			/* CMA */
+			case 0x2f:
+				state->a = ~state->a;
+				break;
 
 			/* LXI SP, word */
 			case 0x31:
@@ -286,6 +370,16 @@ void emulate8080(State8080 * state, int num_cycles)
 				   state->pc += 2;
 				   break;
 
+			/* DCX SP */
+			case 0x3b:
+				   state->sp--;
+				   break;
+
+			/* INR A */
+			case 0x3c:
+				   INR(state->a);
+				   break;
+
 			/* DCR A*/
 			case 0x3d:
 				DCR(state->a);
@@ -294,7 +388,12 @@ void emulate8080(State8080 * state, int num_cycles)
 			/* MVI A, byte */
 			case 0x3e:
 				MVI(state->a);
-				
+
+			/* CMC */
+			case 0x3f:
+				state->cc.cy ^= 1;
+				break;
+
 	/************ MOV INSTRUCTIONS ********************/
 			case 0x40:
 				MOV(state->b, state->b);
@@ -487,6 +586,167 @@ void emulate8080(State8080 * state, int num_cycles)
 
 	/************************** END OF MOV INSTRUCTIONS *****************/
 
+
+			/* ADD B*/
+			case 0x80:
+				ADD(state->b);
+				break;
+
+			/* ADD C*/
+			case 0x81:
+				ADD(state->c);
+				break;
+
+			/* ADD D*/
+			case 0x82:
+				ADD(state->d);
+				break;
+
+			/* ADD E*/
+			case 0x83:
+				ADD(state->e);
+				break;
+
+			/* ADD H*/
+			case 0x84:
+				ADD(state->h);
+				break;
+
+			/* ADD L*/
+			case 0x85:
+				ADD(state->l);
+				break;
+
+			/* ADD M*/
+			case 0x86:
+				ADD(state->memory[(state->h << 8) |state->l]);
+				break;
+
+			/* ADD A*/
+			case 0x87:
+				ADD(state->a);
+				break;
+
+			/* ADC B*/
+			case 0x88:
+				ADC(state->b);
+				break;
+
+			/* ADC C*/
+			case 0x89:
+				ADC(state->c);
+				break;
+
+			/* ADC D*/
+			case 0x8a:
+				ADC(state->d);
+				break;
+
+			/* ADC E*/
+			case 0x8b:
+				ADC(state->e);
+				break;
+
+			/* ADC H*/
+			case 0x8c:
+				ADC(state->h);
+				break;
+
+			/* ADC L*/
+			case 0x8d:
+				ADC(state->l);
+				break;
+
+			/* ADC M*/
+			case 0x8e:
+				ADC(state->memory[(state->h << 8) |state->l]);
+				break;
+
+			/* ADC A*/
+			case 0x8f:
+				ADC(state->a);
+				break;
+
+			/* SUB B*/
+			case 0x90:
+				SUB(state->b);
+				break;
+
+			/* SUB C*/
+			case 0x91:
+				SUB(state->c);
+				break;
+
+			/* SUB D*/
+			case 0x92:
+				SUB(state->d);
+				break;
+
+			/* SUB E*/
+			case 0x93:
+				SUB(state->e);
+				break;
+
+			/* SUB H*/
+			case 0x94:
+				SUB(state->h);
+				break;
+
+			/* SUB L*/
+			case 0x95:
+				SUB(state->l);
+				break;
+
+			/* SUB M*/
+			case 0x96:
+				SUB(state->memory[(state->h << 8) |state->l]);
+				break;
+
+			/* SUB A*/
+			case 0x97:
+				SUB(state->a);
+				break;
+
+			/* SBB B*/
+			case 0x98:
+				SBB(state->b);
+				break;
+
+			/* SBB C*/
+			case 0x99:
+				SBB(state->c);
+				break;
+
+			/* SBB D*/
+			case 0x9a:
+				SBB(state->d);
+				break;
+
+			/* SBB E*/
+			case 0x9b:
+				SBB(state->e);
+				break;
+
+			/* SBB H*/
+			case 0x9c:
+				SBB(state->h);
+				break;
+
+			/* SBB L*/
+			case 0x9d:
+				SBB(state->l);
+				break;
+
+			/* SBB M*/
+			case 0x9e:
+				SBB(state->memory[(state->h << 8) |state->l]);
+				break;
+
+			/* SBB A*/
+			case 0x9f:
+				SBB(state->a);
+				break;
+
 			/* ANA B*/
 			case 0xa0:
 				ANA(state->b);
@@ -567,14 +827,84 @@ void emulate8080(State8080 * state, int num_cycles)
 				XRA(state->a);
 				break;
 
-			/* ORA B */
+			/* ORA B*/
 			case 0xb0:
-				XRA(state->b);
+				ORA(state->b);
 				break;
 
-			/* ORA M */
+			/* ORA C*/
+			case 0xb1:
+				ORA(state->c);
+				break;
+
+			/* ORA D*/
+			case 0xb2:
+				ORA(state->d);
+				break;
+
+			/* ORA E*/
+			case 0xb3:
+				ORA(state->e);
+				break;
+
+			/* ORA H*/
+			case 0xb4:
+				ORA(state->h);
+				break;
+
+			/* ORA L*/
+			case 0xb5:
+				ORA(state->l);
+				break;
+
+			/* ORA M*/
 			case 0xb6:
 				ORA(state->memory[(state->h << 8) |state->l]);
+				break;
+
+			/* ORA A*/
+			case 0xb7:
+				ORA(state->a);
+				break;
+
+			/* CMP B*/
+			case 0xb8:
+				CMP(state->b);
+				break;
+
+			/* CMP C*/
+			case 0xb9:
+				CMP(state->c);
+				break;
+
+			/* CMP D*/
+			case 0xba:
+				CMP(state->d);
+				break;
+
+			/* CMP E*/
+			case 0xbb:
+				CMP(state->e);
+				break;
+
+			/* CMP H*/
+			case 0xbc:
+				CMP(state->h);
+				break;
+
+			/* CMP L*/
+			case 0xbd:
+				CMP(state->l);
+				break;
+
+			/* CMP M*/
+			case 0xbe:
+				CMP(state->memory[(state->h << 8) |state->l]);
+				break;
+
+			/* CMP A*/
+			case 0xbf:
+				CMP(state->a);
 				break;
 
 			/* RNZ*/
@@ -862,6 +1192,12 @@ void emulate8080(State8080 * state, int num_cycles)
 				}
 				break;
 
+			/* PCHL*/
+			case 0xe9:
+				state->pc = (state->h << 8) | state->l;
+				state->pc --;
+				break;
+
 			/* JPE adr */
 			case 0xea:
 				if(state->cc.p)
@@ -967,6 +1303,12 @@ void emulate8080(State8080 * state, int num_cycles)
 				{
 					RET();
 				}
+				break;
+
+			/* SPHL */
+			case 0xf9:
+				state->sp = (state->h << 8) | state-> l;
+				break;
 
 			/* JM adr */
 			case 0xfa:

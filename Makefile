@@ -25,7 +25,7 @@ emulator.o: emulator.c emulator.h
 space_invaders.o: space_invaders.c space_invaders.h
 	$(CC) $(CFLAGS) -I"/usr/include/SDL" space_invaders.c
 
-emulator_debug.o: emulator.c
+emulator_debug.o: emulator.c emulator.h
 	$(CC) $(CFLAGS) -DDEBUG emulator.c -o emulator_debug.o
 
 clean:

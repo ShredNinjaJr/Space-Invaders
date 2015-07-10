@@ -125,6 +125,46 @@ do{		\
 	state->cc.cy = 0;	\
 }while(0)
 
+#define ADD(x)	\
+do{		\
+	answer = (uint16_t)state->a+ (uint16_t)x;\
+	set_zsp(answer);\
+	state->cc.cy = (answer > 0xFF);	\
+	state->a = answer;		\
+}while(0)
+
+#define ADC(x)	\
+do{		\
+	answer = (uint16_t)state->a+ (uint16_t)x + state->cc.cy;\
+	set_zsp(answer);\
+	state->cc.cy = (answer > 0xFF);	\
+	state->a = answer;		\
+}while(0)
+
+
+#define SUB(x)	\
+do{		\
+	answer = (uint16_t)state->a- (uint16_t)x;\
+	set_zsp(answer);\
+	state->cc.cy = !(answer > 0xFF);	\
+	state->a = answer;		\
+}while(0)
+
+
+#define SBB(x)	\
+do{		\
+	answer = (uint16_t)state->a- (uint16_t)x - state->cc.cy;\
+	set_zsp(answer);\
+	state->cc.cy = !(answer > 0xFF);	\
+	state->a = answer;		\
+}while(0)
+
+#define CMP(x)	\
+do{		\
+	answer = (uint16_t)state->a- (uint16_t)x;\
+	set_zsp(answer);\
+	state->cc.cy = !(answer > 0xFF);	\
+}while(0)
 
 #define set_zsp(x)	\
 do{			\
@@ -132,5 +172,7 @@ do{			\
 	state->cc.s = ((x & 0x80) != 0);	\
 	state->cc.p = parity(x);		\
 }while(0)
+
+
 
 #endif

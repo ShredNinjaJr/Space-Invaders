@@ -1,6 +1,7 @@
 
 #include "space_invaders.h"
 
+#define NUM_CYCLES 33333
 /* Shift register for space invaders */
 static uint16_t shift_reg = 0;
 static uint16_t shift_offset = 0;
@@ -9,7 +10,6 @@ static uint16_t shift_offset = 0;
 
 static SDL_Surface * screen;
 static SDL_Event ev;
-
 
 
 union 
@@ -237,10 +237,10 @@ int main(int argc, char ** argv)
 	/* Main loop */
 	while(1)
 	{
-		emulate8080(p_state, 28527);
+		emulate8080(p_state,(NUM_CYCLES * 6) / 7);
 		generate_interrupt(p_state, 1);
 		draw_screen(p_state);
-		emulate8080(p_state, 4839);
+		emulate8080(p_state, NUM_CYCLES / 7);
 		generate_interrupt(p_state, 2);		
 		handle_input();
 		SDL_Delay(15);
