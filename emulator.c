@@ -1119,6 +1119,7 @@ void emulate8080(State8080 * state, int num_cycles)
 				answer = state->a - opcode[1] - state->cc.cy;
 				set_zsp(answer);
 				state->cc.cy = !(answer > 0xFF);
+				state->a = answer;
 				state->pc++;
 				break;
 
@@ -1349,7 +1350,12 @@ void emulate8080(State8080 * state, int num_cycles)
 
 		/* Increment pc */
 		state->pc++;
-
+#ifdef DEBUG
+		/* print all the registers */
+		printf("Pc = %#x, sp = %#x\n ", state->pc, state->sp);
+		printf(" a= %#x, b = %#x, c = %#x, d = %#x, e = %#x, h = %#x, l = %#x", state->a, state->b, state->c, state->d, state->e, state->h, state->l);
+		printf("\nz = %d, s = %d, p = %d, cy = %d \n", state->cc.z,state->cc.s,state->cc.p,state->cc.cy);
+#endif
 		cycle_count += cycles_count[opcode[0]];
 	}
 

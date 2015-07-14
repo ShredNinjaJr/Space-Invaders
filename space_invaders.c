@@ -55,7 +55,7 @@ uint8_t space_invaders_port_in(uint8_t port, State8080* state)
 			return port2.dip2;
 
 		case 3:
-			return (shift_reg << shift_offset) >> 8;	
+			return (shift_reg >> ( 8 -  shift_offset));	
 		default:
 			printf("Invalid port");
 			exit(-1);
@@ -70,11 +70,12 @@ void space_invaders_port_out(uint8_t port, State8080* state)
 	switch(port)
 	{
 		case 2:
-			shift_offset = state->a;
+			shift_offset = state->a & 0x7;
 			break;
 
 		case 4:
-			shift_reg = (shift_reg << 8 ) | state->a;
+			shift_reg = (shift_reg >> 8);
+			shift_reg |= (state->a << 8);
 			break;
 
 		/* Do nothing for port 3,  5, 6 (Not essential) */
