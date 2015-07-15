@@ -262,6 +262,19 @@ void emulate8080(State8080 * state, int num_cycles)
 			/* MVI H, byte */
 			case 0x26:
 				   MVI(state->h);
+			
+			/* DAA */
+			case 0x27:
+				   if(( state->a & 0xf) > 9)
+					   state->a += 6;
+				   if((state->a & 0xf0) > 0x90)
+				   {
+					   answer = (uint16_t)state->a + 0x60;
+					   state->a = answer & 0xff;
+					   set_zsp(answer);
+					   state->cc.cy = (answer > 0xff);
+				   } 
+				   break;
 
 
 			/* DAD H */
@@ -1096,7 +1109,7 @@ void emulate8080(State8080 * state, int num_cycles)
 			/* IN byte*/
 			case 0xdb:
 				if(port8080_in != NULL)
-					port8080_in(opcode[1], state);
+					state->a = port8080_in(opcode[1], state);
 				else
 				{
 					printf("PORT IN NOT assigned");

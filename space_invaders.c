@@ -1,6 +1,8 @@
 
 #include "space_invaders.h"
 
+#define SCREEN_WIDTH 256
+#define SCREEN_HEIGHT 224
 #define NUM_CYCLES 33333
 /* Shift register for space invaders */
 static uint16_t shift_reg = 0;
@@ -10,6 +12,7 @@ static uint16_t shift_offset = 0;
 
 static SDL_Surface * screen;
 static SDL_Event ev;
+static uint8_t * temp_screen;
 
 
 union 
@@ -172,7 +175,7 @@ void handle_input()
 void draw_screen(State8080 * state)
 {
 	int vmem_ptr;
-	int i;
+	int i, j;
 
 	SDL_LockSurface(screen);
 	uint8_t *screen_ptr = screen->pixels;
@@ -183,10 +186,21 @@ void draw_screen(State8080 * state)
 		for( i = 0; i < 8; i++)
 		{
 			*screen_ptr = ((state->memory[vmem_ptr] >> i) & 1) ? 0xFF: 0;
-			screen_ptr++;
+			screen_ptr ++;
 		}
 	}
 
+
+	/* Rotate the image */
+	/*
+	for(i = SCREEN_HEIGHT - 1; i >= 0; i--)
+	{
+		for ( j = 0; j < SCREEN_WIDTH; j++)
+		{
+			*screen_ptr = temp_screen[j* SCREEN_HEIGHT + i];
+			screen_ptr++;
+		}
+	}*/
 	SDL_UnlockSurface(screen);
 	SDL_Flip(screen);
 }
@@ -233,7 +247,8 @@ int main(int argc, char ** argv)
 	atexit(SDL_Quit);
 
 
-	screen = SDL_SetVideoMode(256,224, 8, SDL_DOUBLEBUF);
+	temp_screen = malloc(SCREEN_WIDTH * SCREEN_HEIGHT);
+	screen = SDL_SetVideoMode(SCREEN_WIDTH, SCREEN_HEIGHT,  8, SDL_DOUBLEBUF);
 
 	/* Main loop */
 	while(1)
