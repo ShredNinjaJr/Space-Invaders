@@ -135,10 +135,11 @@ void emulate8080(State8080 * state, int num_cycles)
 			
 			/* RRC */
 			case 0x0f:
-				   state->cc.cy = ((state->a & 1) );
-				   state->a >>= 1;
-				   state->a &= 0x7F;
-				   state->a |= (state->cc.cy << 7);
+			{
+				uint8_t x = state->a;
+				state->a = (( x & 1) << 7) | ( x >> 1);
+				state->cc.cy = ( 1 == (x& 1));
+			}	
 				   break;
 
 			/* LXI D, word */
@@ -281,8 +282,7 @@ void emulate8080(State8080 * state, int num_cycles)
 			case 0x29:
 				   /* HL = HL + HL */
 				   adr = (state->h << 8) | state->l;
-				   answer = (state->h << 8) | state->l;
-				   temp = answer + adr;
+				   temp = adr + adr;
 				   state->cc.cy = (temp > 0xFFFF); 
 				   state->h = (temp >> 8) & 0xFF;
 				   state->l = temp & 0xFF;

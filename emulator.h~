@@ -5,10 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define NUM_CYCLES 1000
 /* type definitions */
 typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
+typedef unsigned int uint32_t;
 
 /* Structures for emulators */
 
